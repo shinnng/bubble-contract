@@ -14,7 +14,8 @@ contract iHeroFace {
 
     uint64 public allPopular = 0;    // 总人气
     uint32 internal _imageId = 0;    // 分身Id计数器
-    uint256 internal constant imageAmount = 10000000000000000000;
+    uint256 internal constant _stakingAmount = 10000000000000000000;
+    address constant _bubble = 0x2000000000000000000000000000000000000002;
 
     mapping(uint32 => uint32) internal dist;   // 记录分身所在bubble
     mapping(address => uint32) internal contributor;
@@ -23,8 +24,9 @@ contract iHeroFace {
     event JoinGame(uint boundId, address player);
     event DestroyImage(uint32 popular);
 
-    modifier onlyOwner(address sender) {
-        // require(sender == _owner, "Condition not satisfied");
+    modifier onlyBubble() {
+        // 需要多签算法检查合约支持，暂无法实现
+        // require(msg.sender == _bubble, "sender must be bubble contract");
         _;
     }
 
@@ -57,22 +59,22 @@ contract iHeroFace {
         return dist[imageId];
     }
 
-    // 英雄创建分身到bubble
-    function image() external {
+    // 游戏初始化：为英雄创建分身到bubble链
+    function addImage() public {
         // 获取一个bubble
         uint32 bubbleId = Bubble.selectBubble(1);
         // 记录分身所在的bubble
         _imageId++;
         dist[_imageId] = bubbleId;
         // 在bubble部署逻辑合约
-        Bubble.remoteDeploy(bubbleId, _logicContact, imageAmount, bytes("")); // todo: 补充初始化data
+        Bubble.remoteDeploy(bubbleId, _logicContact, _stakingAmount, bytes("")); // todo: 补充初始化data
 
         emit CreateGame(_imageId, bubbleId, msg.sender);
         emit JoinGame(bubbleId, msg.sender);
     }
 
-    // 英雄收取从bubble过来的人气
-    function destroyImage(uint32 popular) public onlyOwner(msg.sender) {
+    // 游戏结算：召回分身，并获取从分身的人气
+    function delImage(uint32 popular) public onlyBubble {
         allPopular += popular;
         contributor[msg.sender] += popular;
 
