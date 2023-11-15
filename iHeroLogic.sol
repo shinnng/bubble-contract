@@ -30,7 +30,7 @@ contract iHeroLogic {
 
     // 游戏结束：手动结束游戏，将bubble链累积的人气结算到主链
     function delImage() public onlyCreator {
-        bytes memory callData = abi.encodeWithSignature("recall(uint32 popular)", _popular);
+        bytes memory callData = abi.encodeWithSignature("delImage(uint32 popular)", _popular);
         Bubble.remoteCallBack(address(this), callData);
 
         emit EndGame(block.number);
@@ -39,7 +39,7 @@ contract iHeroLogic {
     // 游戏结束：将bubble链累积的人气结算到主链
     // ps：仅在bubble链销毁时自动执行，不可被调用
     function destroy() public onlyBubble {
-        bytes memory callData = abi.encodeWithSignature("recall(uint32 popular)", _popular);
+        bytes memory callData = abi.encodeWithSignature("delImage(uint32 popular)", _popular);
         Bubble.remoteCallBack(address(this), callData);
 
         emit EndGame(block.number);

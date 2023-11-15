@@ -2,9 +2,12 @@ pragma solidity ^0.8.9;
 
 import {RLPReader} from "./rlp/RLPReader.sol";
 import {RLPWriter} from "./rlp/RLPWriter.sol";
+import {Log} from "./log/log.sol";
 
 library Bubble {
-    event LogMessage(string message);
+    using RLPReader for RLPReader.RLPItem;
+    using RLPReader for RLPReader.Iterator;
+    using RLPReader for bytes;
 
     function bytesToHex(bytes memory data) public pure returns (string memory) {
         bytes memory alphabet = "0123456789abcdef";
@@ -21,27 +24,56 @@ library Bubble {
         return string(str);
     }
 
-    function selectBubble(uint8 size) internal returns (uint32) {
+    function bytesToBytes32(bytes memory data) public pure returns (bytes32) {
+        require(data.length <= 32, "Input data must be at least 32 bytes");
+
+        bytes32 result;
+        // 截取前32个字节
+        assembly {
+            result := mload(add(data, 32))
+        }
+
+        return result;
+    }
+
+    function assemblyCallppos(bytes memory data,address addr) public returns(bytes memory)  {
+        uint256 len = data.length;
+        uint retsize;
+        bytes memory resval;
+        assembly {
+            if iszero(call(gas(), addr, 0,  add(data, 0x20), len, 0, 0)) {
+                invalid()
+            }
+            retsize := returndatasize()
+        }
+        resval = new bytes(retsize);
+        assembly {
+            returndatacopy(add(resval, 0x20), 0, returndatasize())
+        }
+        return resval;
+    }
+
+    function selectBubble(uint8 size) internal returns (uint) {
         bytes[] memory dataArrays = new bytes[](2);
 
         bytes memory fnData = RLPWriter.writeBytes(RLPWriter.writeUint(8001));
         bytes memory sizeData = RLPWriter.writeBytes(RLPWriter.writeUint(size));
         dataArrays[0] = fnData;
         dataArrays[1] = sizeData;
-
         bytes memory rlpData = RLPWriter.writeList(dataArrays);
-        
-        (bool success, bytes memory returnData) = address(0x2000000000000000000000000000000000000002).call(rlpData);
-        if (!success) {
-            revert("call selectBubble failed");
-        }
 
-        emit LogMessage(bytesToHex(returnData));
-//        uint result = abi.decode(returnData, (uint));
-        return 0;
+        bytes memory returnData = assemblyCallppos(rlpData, address(0x2000000000000000000000000000000000000002));
+        // emit Log.LogMessage("returnData", 0, returnData);
+
+        RLPReader.RLPItem[] memory items = returnData.toRlpItem().toList();
+        
+        bytes memory ByteId = items[0].toBytes();
+        uint bubbleId = ByteId.toRlpItem().toUint();
+
+        return bubbleId;
     }
 
-    function remoteDeploy(uint64 bubbleID, address target, uint256 amount, bytes memory data) internal {
+    function remoteDeploy(uint bubbleID, address target, uint256 amount, bytes memory data) internal {
         bytes[] memory dataArrays = new bytes[](5);
 
         bytes memory fnData = RLPWriter.writeBytes(RLPWriter.writeUint(8006));
@@ -62,10 +94,10 @@ library Bubble {
             revert("call remoteDeploy failed");
         }
 
-        emit LogMessage(bytesToHex(returnData));
+        // emit LogMessage(returnData);
     }
 
-    function remoteCall(uint64 bubbleID, address target, bytes memory data) internal {
+    function remoteCall(uint bubbleID, address target, bytes memory data) internal {
         bytes[] memory dataArrays = new bytes[](4);
 
         bytes memory fnData = RLPWriter.writeBytes(RLPWriter.writeUint(8007));
@@ -84,7 +116,7 @@ library Bubble {
             revert("call remoteDeploy failed");
         }
 
-        emit LogMessage(bytesToHex(returnData));
+        // emit LogMessage(returnData);
     }
 
         function remoteCallBack(address target, bytes memory data) internal {
@@ -104,7 +136,7 @@ library Bubble {
             revert("call remoteDeploy failed");
         }
 
-        emit LogMessage(bytesToHex(returnData));
+        // emit LogMessage(returnData);
     }
 
 
