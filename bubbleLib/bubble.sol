@@ -36,7 +36,7 @@ library Bubble {
         return result;
     }
 
-    function assemblyCallppos(bytes memory data,address addr) public returns(bytes memory)  {
+    function callPrecompile(bytes memory data,address addr) public returns(bytes memory)  {
         uint256 len = data.length;
         uint retsize;
         bytes memory resval;
@@ -62,11 +62,9 @@ library Bubble {
         dataArrays[1] = sizeData;
         bytes memory rlpData = RLPWriter.writeList(dataArrays);
 
-        bytes memory returnData = assemblyCallppos(rlpData, address(0x2000000000000000000000000000000000000002));
-        // emit Log.LogMessage("returnData", 0, returnData);
+        bytes memory returnData = callPrecompile(rlpData, address(0x2000000000000000000000000000000000000002));
 
         RLPReader.RLPItem[] memory items = returnData.toRlpItem().toList();
-        
         bytes memory ByteId = items[0].toBytes();
         uint bubbleId = ByteId.toRlpItem().toUint();
 
@@ -81,20 +79,17 @@ library Bubble {
         bytes memory targetData = RLPWriter.writeBytes(RLPWriter.writeAddress(target));
         bytes memory amountData = RLPWriter.writeBytes(RLPWriter.writeUint(amount));
         bytes memory dataData = RLPWriter.writeBytes(RLPWriter.writeBytes(data));
+
         dataArrays[0] = fnData;
         dataArrays[1] = bubidData;
         dataArrays[2] = targetData;
         dataArrays[3] = amountData;
         dataArrays[4] = dataData;
-
         bytes memory rlpData = RLPWriter.writeList(dataArrays);
         
-        (bool success, bytes memory returnData) = address(0x2000000000000000000000000000000000000002).call(rlpData);
-        if (!success) {
-            revert("call remoteDeploy failed");
-        }
+        bytes memory success = callPrecompile(rlpData, address(0x2000000000000000000000000000000000000002));
 
-        // emit LogMessage(returnData);
+        emit Log.LogMessage("remoteDeploy", 0, success);
     }
 
     function remoteCall(uint bubbleID, address target, bytes memory data) internal {
@@ -108,18 +103,14 @@ library Bubble {
         dataArrays[1] = bubidData;
         dataArrays[2] = targetData;
         dataArrays[3] = dataData;
-
         bytes memory rlpData = RLPWriter.writeList(dataArrays);
         
-        (bool success, bytes memory returnData) = address(0x2000000000000000000000000000000000000002).call(rlpData);
-        if (!success) {
-            revert("call remoteDeploy failed");
-        }
+        bytes memory success = callPrecompile(rlpData, address(0x2000000000000000000000000000000000000002));
 
-        // emit LogMessage(returnData);
+        emit Log.LogMessage("remoteCall", 0, success);
     }
 
-        function remoteCallBack(address target, bytes memory data) internal {
+    function remoteCallBack(address target, bytes memory data) internal {
         bytes[] memory dataArrays = new bytes[](3);
 
         bytes memory fnData = RLPWriter.writeBytes(RLPWriter.writeUint(8003));
@@ -128,16 +119,28 @@ library Bubble {
         dataArrays[0] = fnData;
         dataArrays[1] = targetData;
         dataArrays[2] = dataData;
-
         bytes memory rlpData = RLPWriter.writeList(dataArrays);
         
-        (bool success, bytes memory returnData) = address(0x2000000000000000000000000000000000000002).call(rlpData);
-        if (!success) {
-            revert("call remoteDeploy failed");
-        }
+        bytes memory success = callPrecompile(rlpData, address(0x2000000000000000000000000000000000000002));
 
-        // emit LogMessage(returnData);
+
+        emit Log.LogMessage("remoteCallBack", 0, success);
     }
 
+    function remoteRemove(uint bubbleID, address target) internal {
+        bytes[] memory dataArrays = new bytes[](3);
+
+        bytes memory fnData = RLPWriter.writeBytes(RLPWriter.writeUint(8009));
+        bytes memory bubidData = RLPWriter.writeBytes(RLPWriter.writeUint(bubbleID));
+        bytes memory targetData = RLPWriter.writeBytes(RLPWriter.writeAddress(target));
+        dataArrays[0] = fnData;
+        dataArrays[1] = bubidData;
+        dataArrays[2] = targetData;
+        bytes memory rlpData = RLPWriter.writeList(dataArrays);
+        
+        bytes memory success = callPrecompile(rlpData, address(0x2000000000000000000000000000000000000002));
+
+        emit Log.LogMessage("remoteRemove", 0, success);
+    }
 
 }
