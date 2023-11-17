@@ -1,12 +1,8 @@
-# iHero游戏合约
+# TurnLib
 
 ## 介绍
-这是一个简单的游戏示例，运行于bubble区块链网络，用于演示游戏合约在多个bubble网络并行运行并结算的过程。
+专属于Turn区块链的solidity跨网络调用库
 
-## 部署
-
-1. 在主链部署iHeroLogic合约（部署前，可以修改下内部_creator地址）
-2. 使用iHeroLogic的地址做为初始化参数之一，部署iHeroFace合约
-
-## 开始
-根据合约代码中的注释逻辑进行游戏即可
+## 目录说明
+lib/bubble.sol: 使用solidity方式，对跨网络内置合约进行了封装
+example: 使用示例

@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import {Bubble} from "./bubbleLib/bubble.sol";
-import {Log} from "./bubbleLib/log/log.sol";
+import {Bubble} from "../../bubbleLib/bubble.sol";
+import {Log} from "../../bubbleLib/log/log.sol";
 
 // 这是一个简单的游戏，英雄可以创建分身，用户为英雄的分身点赞，就会增加英雄的人气。
 contract iHeroFace {

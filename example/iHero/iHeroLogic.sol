@@ -1,6 +1,7 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
 
-import {Bubble} from "./bubbleLib/bubble.sol";
+import {Bubble} from "../../bubbleLib/bubble.sol";
 
 
 contract iHeroLogic {
