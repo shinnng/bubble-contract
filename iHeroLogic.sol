@@ -5,10 +5,12 @@ import {Bubble} from "./bubbleLib/bubble.sol";
 
 contract iHeroLogic {
     address constant _bubble = 0x2000000000000000000000000000000000000002;
-    address constant _creator = 0x36c756417E63F740d83908d5216310A4603d6ecc;
-    uint32 _popular;
+    address constant public creator = 0x36c756417E63F740d83908d5216310A4603d6ecc;
+    uint32 public imageId;
+    uint32 public popular;
 
-    event AddPopular(address sender);
+    event AddPopular(uint popularId);
+    event SendPopular(uint count);
     event EndGame(uint256 blockNumber);
 
     modifier onlyBubble() {
@@ -17,31 +19,32 @@ contract iHeroLogic {
     }
 
     modifier onlyCreator() {
-        require(msg.sender == _creator, "sender must be contract creator");
+        require(msg.sender == creator, "sender must be contract creator");
         _;
     }
 
-    // 进行游戏：在bubble链上为英雄增加人气
+    // 在bubble链上为英雄增加人气
     function addPopular() public {
-        _popular++;
+        popular++;
 
-        emit AddPopular(msg.sender);
+        emit AddPopular(popular);
     }
 
-    // 游戏结束：手动结束游戏，将bubble链累积的人气结算到主链
-    function delImage() public onlyCreator {
-        bytes memory callData = abi.encodeWithSignature("delImage(uint32 popular)", _popular);
+    // 将bubble链累积的人气结算到主链
+    function sendPopular() public {
+        bytes memory callData = abi.encodeWithSignature("transmit(uint32 imageId, uint32 popular)", imageId, popular);
         Bubble.remoteCallBack(address(this), callData);
 
-        emit EndGame(block.number);
+        emit SendPopular(popular);
+        popular = 0;   // 清空人气
     }
 
-    // 游戏结束：将bubble链累积的人气结算到主链
-    // ps：仅在bubble链销毁时自动执行，不可被调用
+    // bubble链被强制销毁时自动执行（将bubble链累积的人气结算到主链）
     function destroy() public onlyBubble {
-        bytes memory callData = abi.encodeWithSignature("delImage(uint32 popular)", _popular);
+        bytes memory callData = abi.encodeWithSignature("destroyExecutor(uint32 imageId, uint32 popular)", imageId, popular);
         Bubble.remoteCallBack(address(this), callData);
-
+        
         emit EndGame(block.number);
+        popular = 0;   // 清空人气
     }
 }

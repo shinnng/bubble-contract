@@ -123,7 +123,6 @@ library Bubble {
         
         bytes memory success = callPrecompile(rlpData, address(0x2000000000000000000000000000000000000002));
 
-
         emit Log.LogMessage("remoteCallBack", 0, success);
     }
 
